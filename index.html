@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  MBC LOAN INTAKE FORM  —  index.html (Borrower-Facing)          ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  EMAILJS SETUP (one-time, free):                                 ║
+  ║  1. Go to https://www.emailjs.com/ → sign up for free           ║
+  ║  2. Add Email Service → connect your Outlook or Gmail           ║
+  ║  3. Create Email Template with these variables:                  ║
+  ║       {{to_email}}, {{from_name}}, {{reply_to}},                 ║
+  ║       {{subject}}, {{all_fields}}, {{admin_link}}                ║
+  ║     Sample template body:                                        ║
+  ║       New loan application from {{from_name}}                    ║
+  ║       {{all_fields}}                                             ║
+  ║       Download Excel: {{admin_link}}                             ║
+  ║  4. Replace the three EMAILJS_ placeholders below               ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loan Application — Mesa Bridge Capital</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    /* ── Brand Variables ── */
+    :root {
+      --navy:        #002855;
+      --blue:        #009CDE;
+      --orange:      #E87722;
+      --dk-orange:   #CB6015;
+      --lt-blue:     #62B5E5;
+      --gray:        #D0D3D4;
+      --off-white:   #F4F6F9;
+      --text:        #1a1a1a;
+      --muted:       #6b7280;
+      --border:      #dde2ea;
+      --input-bg:    #fafbfc;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--off-white);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 36px 16px 64px;
+    }
+    .page-wrapper { max-width: 840px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--navy);
+      border-radius: 10px 10px 0 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    .header-top {
+      padding: 32px 40px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .logo-mark {
+      width: 60px; height: 60px;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .logo-mark svg { width: 100%; height: 100%; }
+    .header-text h1 {
+      font-size: 22px; font-weight: 700;
+      color: #fff; letter-spacing: 0.5px;
+    }
+    .header-text p {
+      font-size: 13px; font-weight: 300;
+      color: var(--lt-blue); margin-top: 3px;
+    }
+    .header-bar {
+      height: 4px;
+      background: linear-gradient(90deg, var(--orange) 0%, var(--blue) 100%);
+    }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      background: #fff; padding: 14px 40px;
+      display: flex; gap: 6px; align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .prog-step {
+      flex: 1; height: 4px; border-radius: 2px;
+      background: var(--gray); transition: background 0.3s;
+    }
+    .prog-step.active   { background: var(--blue); }
+    .prog-step.complete { background: var(--orange); }
+
+    /* ── Card / Section ── */
+    .card {
+      background: #fff;
+      border-top: 1px solid var(--border);
+      padding: 28px 40px;
+    }
+    .card:last-of-type { border-radius: 0; }
+
+    .section-title {
+      font-size: 13px; font-weight: 700;
+      color: var(--navy);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 22px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--orange);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-num {
+      background: var(--navy); color: #fff;
+      font-size: 11px; font-weight: 700;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Fields ── */
+    .field-group { margin-bottom: 18px; }
+    .field-group label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: #374151; margin-bottom: 5px;
+    }
+    .hint {
+      font-size: 12px; color: var(--muted);
+      font-weight: 400; display: block; margin-top: 2px;
+    }
+    input[type="text"], input[type="email"], input[type="tel"],
+    textarea, select {
+      width: 100%; padding: 9px 12px;
+      border: 1px solid var(--border); border-radius: 6px;
+      font-size: 14px; font-family: 'Roboto', sans-serif;
+      color: var(--text); background: var(--input-bg);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(0,156,222,0.12);
+      background: #fff;
+    }
+    textarea { resize: vertical; min-height: 76px; }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 20px; }
+    @media(max-width:640px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .card { padding: 22px 20px; }
+      .header-top { padding: 22px 20px; }
+      .progress-wrap { padding: 12px 20px; }
+    }
+
+    /* ── Checkboxes / Radios ── */
+    .check-group {
+      display: flex; flex-wrap: wrap;
+      gap: 8px 20px; margin-top: 6px;
+    }
+    .check-group label {
+      display: flex; align-items: center;
+      gap: 7px; font-size: 13.5px;
+      font-weight: 400; color: #374151; cursor: pointer;
+    }
+    .check-group input[type="checkbox"],
+    .check-group input[type="radio"] {
+      width: 16px; height: 16px;
+      accent-color: var(--navy); cursor: pointer; flex-shrink: 0;
+    }
+    .other-row {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .other-row input[type="text"] {
+      width: 200px; padding: 6px 10px; font-size: 13px;
+    }
+
+    /* ── Bio rows ── */
+    .bio-row {
+      display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;
+    }
+    .bio-row .bio-lbl {
+      font-size: 13px; font-weight: 500; color: #374151;
+      white-space: nowrap; padding-top: 9px; min-width: 200px;
+    }
+    .bio-row input { flex: 1; }
+
+    /* ── Divider ── */
+    .divider { border: none; border-top: 1px dashed var(--border); margin: 20px 0; }
+
+    /* ── Sub label ── */
+    .sub-label {
+      font-size: 12px; font-weight: 700; color: var(--blue);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 18px 0 10px;
+    }
+
+    /* ── Conditional section ── */
+    .conditional { display: none; }
+    .conditional.visible { display: block; }
+
+    /* ── Required marker ── */
+    .req { color: var(--orange); margin-left: 1px; }
+
+    /* ── Submit bar ── */
+    .submit-bar {
+      background: var(--navy);
+      border-radius: 0 0 10px 10px;
+      padding: 28px 40px;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .submit-note {
+      font-size: 12px; color: var(--lt-blue); font-weight: 300;
+      max-width: 340px; line-height: 1.5;
+    }
+    .btn-submit {
+      background: var(--orange); color: #fff;
+      font-family: 'Roboto', sans-serif;
+      font-size: 15px; font-weight: 700;
+      padding: 13px 40px; border: none;
+      border-radius: 7px; cursor: pointer;
+      letter-spacing: 0.2px;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .btn-submit:hover  { background: var(--dk-orange); }
+    .btn-submit:active { transform: scale(0.97); }
+    .btn-submit:disabled { background: var(--gray); cursor: not-allowed; }
+
+    /* ── Thank you screen ── */
+    #thank-you {
+      display: none;
+      background: #fff;
+      border-radius: 0 0 10px 10px;
+      padding: 60px 40px;
+      text-align: center;
+    }
+    .ty-icon {
+      width: 64px; height: 64px; margin: 0 auto 20px;
+      background: #e8f9ee; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ty-icon svg { width: 32px; height: 32px; }
+    #thank-you h2 { font-size: 22px; font-weight: 700; color: var(--navy); }
+    #thank-you p  { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 440px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+    .ty-ref {
+      margin-top: 28px; padding: 16px 24px;
+      background: var(--off-white); border-radius: 8px;
+      display: inline-block; text-align: left;
+    }
+    .ty-ref .label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .ty-ref .code  { font-size: 13px; color: var(--navy); font-weight: 500; margin-top: 4px; word-break: break-all; }
+    .ty-brand { margin-top: 36px; }
+    .ty-brand span { font-size: 13px; color: var(--gray); font-weight: 300; }
+
+    /* ── Error state ── */
+    input.error, textarea.error { border-color: #dc2626; }
+    .error-msg { font-size: 12px; color: #dc2626; margin-top: 3px; display: none; }
+    .error-msg.visible { display: block; }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="header-top">
+      <!-- MBC Logo mark (SVG approximation of the interlocking shapes) -->
+      <div class="logo-mark">
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <!-- Square frame -->
+          <rect x="2" y="2" width="56" height="56" rx="3" fill="none" stroke="#D0D3D4" stroke-width="2"/>
+          <!-- Orange shape -->
+          <path d="M14 30 A16 16 0 0 1 46 30 A16 16 0 0 1 30 46 L30 38 A8 8 0 0 0 38 30 A8 8 0 0 0 14 30Z" fill="#E87722"/>
+          <!-- Blue shape -->
+          <path d="M30 14 A16 16 0 0 1 46 30 L38 30 A8 8 0 0 0 30 22 A8 8 0 0 0 22 30 L14 30 A16 16 0 0 1 30 14Z" fill="#009CDE" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>MESA BRIDGE CAPITAL</h1>
+        <p>Hard Money Loan Application &nbsp;·&nbsp; Confidential</p>
+      </div>
+    </div>
+    <div class="header-bar"></div>
+  </div>
+
+  <!-- ── Progress bar (7 steps) ── -->
+  <div class="progress-wrap" id="progressWrap">
+    <div class="prog-step active" id="ps1"></div>
+    <div class="prog-step" id="ps2"></div>
+    <div class="prog-step" id="ps3"></div>
+    <div class="prog-step" id="ps4"></div>
+    <div class="prog-step" id="ps5"></div>
+    <div class="prog-step" id="ps6"></div>
+    <div class="prog-step" id="ps7"></div>
+  </div>
+
+  <form id="loanForm" novalidate>
+
+    <!-- ══ SECTION 1: Borrower Information ══ -->
+    <div class="card" id="sec1">
+      <div class="section-title"><span class="section-num">1</span>Borrower Information</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Borrowing Entity Name<span class="req">*</span></label>
+          <input type="text" name="entity_name" required placeholder="e.g. Acme Holdings LLC" />
+        </div>
+        <div class="field-group">
+          <label>Sponsor Name(s)<span class="req">*</span></label>
+          <input type="text" name="sponsor_names" required placeholder="Full legal name(s)" />
+        </div>
+        <div class="field-group">
+          <label>Email<span class="req">*</span></label>
+          <input type="email" name="email" required placeholder="you@company.com" />
+        </div>
+        <div class="field-group">
+          <label>Phone<span class="req">*</span></label>
+          <input type="tel" name="phone" required placeholder="(555) 000-0000" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Brief Sponsor Bio <span style="font-weight:300;color:var(--muted)">(2–3 sentences)</span></label>
+        <textarea name="sponsor_bio" placeholder="Describe your background and experience as a real estate sponsor..."></textarea>
+      </div>
+
+      <div class="bio-row">
+        <span class="bio-lbl">Years in Business:</span>
+        <input type="text" name="years_in_business" placeholder="e.g. 12 years" />
+      </div>
+      <div class="bio-row">
+        <span class="bio-lbl">Similar Projects Completed:</span>
+        <input type="text" name="similar_projects" placeholder="e.g. 8 ground-up multifamily projects" />
+      </div>
+
+      <hr class="divider" />
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Net Worth <span style="font-weight:300;color:var(--muted)">(approximate)</span></label>
+          <input type="text" name="net_worth" placeholder="e.g. $2,500,000" />
+        </div>
+        <div class="field-group">
+          <label>Liquidity Available <span style="font-weight:300;color:var(--muted)">(approximate)</span></label>
+          <input type="text" name="liquidity" placeholder="e.g. $350,000" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Personal / Corporate Guarantee?</label>
+        <div class="check-group">
+          <label><input type="radio" name="guarantee" value="Yes" /> Yes</label>
+          <label><input type="radio" name="guarantee" value="No" /> No</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 2: Project Backstory ══ -->
+    <div class="card" id="sec2">
+      <div class="section-title"><span class="section-num">2</span>Project Backstory</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>When was the property acquired?</label>
+          <span class="hint">Leave blank if this is an acquisition loan</span>
+          <input type="text" name="acquisition_date" placeholder="e.g. March 2022" />
+        </div>
+        <div class="field-group">
+          <label>Purchase Price</label>
+          <input type="text" name="purchase_price" placeholder="e.g. $1,750,000" />
+        </div>
+        <div class="field-group">
+          <label>Total Capital Invested to Date</label>
+          <input type="text" name="total_capital_invested" placeholder="e.g. $2,400,000" />
+        </div>
+        <div class="field-group">
+          <label>How Much of That is Sponsor Cash?</label>
+          <input type="text" name="sponsor_cash" placeholder="e.g. $800,000" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>If Refinancing — Current Lender &amp; Payoff Amount</label>
+        <input type="text" name="current_lender_payoff" placeholder="e.g. First National Bank / $3,100,000 payoff" />
+      </div>
+      <div class="field-group">
+        <label>Why are you seeking financing at this time?</label>
+        <textarea name="why_financing" rows="3" placeholder="Brief explanation of your financing needs and timing..."></textarea>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 3: Property Information ══ -->
+    <div class="card" id="sec3">
+      <div class="section-title"><span class="section-num">3</span>Property Information</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Property Name <span style="font-weight:300;color:var(--muted)">(if applicable)</span></label>
+          <input type="text" name="property_name" placeholder="e.g. Sunrise Flats" />
+        </div>
+        <div class="field-group">
+          <label>Property Type<span class="req">*</span></label>
+          <input type="text" name="property_type" required placeholder="e.g. Multifamily, Townhomes, Industrial" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Address<span class="req">*</span></label>
+        <input type="text" name="property_address" required placeholder="Street, City, State, ZIP" />
+      </div>
+
+      <div class="field-group">
+        <label>Current Status <span style="font-weight:300;color:var(--muted)">(best estimate — select one)</span></label>
+        <div class="check-group" style="margin-top:10px; flex-direction:column; gap:10px">
+          <label><input type="radio" name="current_status" value="Raw Land (does not have desired zoning or density)" /> Raw Land <span style="font-weight:300;color:var(--muted);font-size:12px">(does not have desired zoning or density)</span></label>
+          <label><input type="radio" name="current_status" value="Entitled Land" /> Entitled Land</label>
+          <label><input type="radio" name="current_status" value="Horizontally Complete" /> Horizontally Complete</label>
+          <label><input type="radio" name="current_status" value="Vertically Built" /> Vertically Built</label>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="sub-label">Size</div>
+      <div class="grid-3">
+        <div class="field-group">
+          <label>Land Area</label>
+          <input type="text" name="land_area" placeholder="e.g. 2.4 acres" />
+        </div>
+        <div class="field-group">
+          <label>Building SF</label>
+          <input type="text" name="building_sf" placeholder="e.g. 18,500 SF" />
+        </div>
+        <div class="field-group">
+          <label>Units / Lots</label>
+          <input type="text" name="units_lots" placeholder="e.g. 48 units" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 4: Capital Request ══ -->
+    <div class="card" id="sec4">
+      <div class="section-title"><span class="section-num">4</span>Capital Request</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Net Proceeds Requested<span class="req">*</span></label>
+          <span class="hint">Excludes interest, fees, and closing costs</span>
+          <input type="text" name="net_proceeds" required placeholder="e.g. $4,200,000" />
+        </div>
+        <div class="field-group">
+          <label>Loan Term Requested</label>
+          <span class="hint">Select multiple if needed</span>
+          <input type="text" name="loan_term" placeholder="e.g. 12 months, 18 months" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Use of Funds <span style="font-weight:300;color:var(--muted)">(select all that apply)</span></label>
+        <div class="check-group" style="margin-top:8px">
+          <label><input type="checkbox" name="use_refinance"    value="Refinance" />    Refinance</label>
+          <label><input type="checkbox" name="use_construction" value="Construction" /> Construction</label>
+          <label><input type="checkbox" name="use_acquisition"  value="Acquisition" />  Acquisition</label>
+          <label><input type="checkbox" name="use_entitlement"  value="Entitlement" />  Entitlement</label>
+          <label class="other-row">
+            <input type="checkbox" name="use_other_chk" value="Other" />
+            Other:&nbsp;<input type="text" name="use_other_txt" placeholder="Specify..." />
+          </label>
+        </div>
+      </div>
+
+      <!-- Conditional: Entitlement detail -->
+      <div id="entitlement_block" class="conditional">
+        <div class="field-group">
+          <label>Entitlement Work Detail<span class="req">*</span></label>
+          <span class="hint">Please describe what entitlement work remains, including timelines and budgeted funds needed</span>
+          <textarea name="entitlement_detail" rows="3" placeholder="e.g. Final plat approval expected Q3 2025, ~$45,000 in remaining permitting fees..."></textarea>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Breakdown of MBC Loan Dollar Uses <span style="font-weight:300;color:var(--muted)">(approximate)</span></label>
+        <textarea name="loan_breakdown" rows="3" placeholder="e.g. $2M land acquisition, $1.8M vertical construction, $400K soft costs..."></textarea>
+      </div>
+      <div class="field-group">
+        <label>Is there a deadline to close? If yes, please explain:</label>
+        <textarea name="close_deadline" rows="2" placeholder="e.g. Purchase agreement expires May 15th, 2025..."></textarea>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 5: Entitlement & Construction Status ══ -->
+    <div class="card" id="sec5">
+      <div class="section-title"><span class="section-num">5</span>Entitlement &amp; Construction Status</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Current Zoning</label>
+          <input type="text" name="current_zoning" placeholder="e.g. R-3 Multifamily" />
+        </div>
+        <div class="field-group">
+          <label>Is the project fully entitled?</label>
+          <div class="check-group" style="padding-top:10px">
+            <label><input type="radio" name="fully_entitled" value="Yes" /> Yes</label>
+            <label><input type="radio" name="fully_entitled" value="No"  /> No</label>
+          </div>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>If not fully entitled — what approvals remain?</label>
+        <span class="hint">Please specify timelines and funds needed to achieve approvals</span>
+        <textarea name="approvals_remaining" rows="2" placeholder="e.g. Final plat approval, utility easement — est. 90 days, ~$30,000..."></textarea>
+      </div>
+      <div class="field-group">
+        <label>Are building permits issued?</label>
+        <div class="check-group">
+          <label><input type="radio" name="permits_issued" value="Yes"        /> Yes</label>
+          <label><input type="radio" name="permits_issued" value="No"         /> No</label>
+          <label><input type="radio" name="permits_issued" value="In Process" /> In Process</label>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Estimated Timeline to Completion / Stabilization</label>
+          <input type="text" name="timeline_completion" placeholder="e.g. 14 months from close" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Any known municipal, utility, or environmental issues?</label>
+        <textarea name="known_issues" rows="2" placeholder="Describe any known issues, or enter 'None'..."></textarea>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 6: Project Economics ══ -->
+    <div class="card" id="sec6">
+      <div class="section-title"><span class="section-num">6</span>Project Economics</div>
+      <div class="grid-2">
+        <div class="field-group">
+          <label>Projected Stabilized Value or Sales Value</label>
+          <input type="text" name="projected_value" placeholder="e.g. $9,500,000" />
+        </div>
+      </div>
+      <div class="field-group">
+        <label>How was this value determined? <span style="font-weight:300;color:var(--muted)">(select all that apply)</span></label>
+        <div class="check-group" style="margin-top:8px">
+          <label><input type="checkbox" name="val_appraisal" value="Appraisal"       /> Appraisal</label>
+          <label><input type="checkbox" name="val_broker"    value="Broker Opinion"  /> Broker Opinion</label>
+          <label><input type="checkbox" name="val_comps"     value="Comparable Sales"/> Comparable Sales</label>
+          <label><input type="checkbox" name="val_proforma"  value="Pro Forma"       /> Pro Forma</label>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="sub-label">If Income-Producing or Lease-Up</div>
+      <div class="grid-3">
+        <div class="field-group">
+          <label>Target Rent per SF or Unit</label>
+          <input type="text" name="target_rent" placeholder="e.g. $2.10/SF or $1,850/unit" />
+        </div>
+        <div class="field-group">
+          <label>Target Cap Rate</label>
+          <input type="text" name="target_cap_rate" placeholder="e.g. 5.5%" />
+        </div>
+        <div class="field-group">
+          <label>Expected Stabilized NOI</label>
+          <input type="text" name="stabilized_noi" placeholder="e.g. $475,000/yr" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 7: Exit Strategy ══ -->
+    <div class="card" id="sec7">
+      <div class="section-title"><span class="section-num">7</span>Exit Strategy</div>
+
+      <div class="field-group">
+        <label>Primary Exit <span style="font-weight:300;color:var(--muted)">(select one)</span></label>
+        <div class="check-group" style="margin-top:8px">
+          <label><input type="radio" name="primary_exit" value="Sale"      onclick="toggleExit()" /> Sale</label>
+          <label><input type="radio" name="primary_exit" value="Refinance" onclick="toggleExit()" /> Refinance</label>
+          <label><input type="radio" name="primary_exit" value="Both"      onclick="toggleExit()" /> Both</label>
+        </div>
+      </div>
+
+      <!-- Sale fields -->
+      <div id="exit_sale" class="conditional">
+        <hr class="divider" />
+        <div class="sub-label">Sale Details</div>
+        <div class="grid-2">
+          <div class="field-group">
+            <label>Expected Sales Price</label>
+            <input type="text" name="expected_sales_price" placeholder="e.g. $9,500,000" />
+          </div>
+          <div class="field-group">
+            <label>Buyer Engaged?</label>
+            <div class="check-group" style="padding-top:10px">
+              <label><input type="radio" name="buyer_engaged" value="Yes" /> Yes</label>
+              <label><input type="radio" name="buyer_engaged" value="No"  /> No</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Refinance fields -->
+      <div id="exit_refi" class="conditional">
+        <hr class="divider" />
+        <div class="sub-label">Refinance Details</div>
+        <div class="grid-2">
+          <div class="field-group">
+            <label>Expected Stabilized Value</label>
+            <input type="text" name="refi_stabilized_value" placeholder="e.g. $8,200,000" />
+          </div>
+          <div class="field-group">
+            <label>Target Lender Type</label>
+            <input type="text" name="target_lender_type" placeholder="e.g. Bank, Agency, Debt Fund" />
+          </div>
+          <div class="field-group">
+            <label>Any Forward Takeout Commitment?</label>
+            <div class="check-group" style="padding-top:10px">
+              <label><input type="radio" name="takeout_commitment" value="Yes" /> Yes</label>
+              <label><input type="radio" name="takeout_commitment" value="No"  /> No</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="field-group">
+        <label>Expected Timeline to Exit</label>
+        <input type="text" name="exit_timeline" placeholder="e.g. 18–24 months from close" />
+      </div>
+    </div>
+
+    <!-- ══ Submit Bar ══ -->
+    <div class="submit-bar" id="submitBar">
+      <p class="submit-note">All information is kept strictly confidential and used solely for underwriting purposes.</p>
+      <button type="button" class="btn-submit" id="submitBtn" onclick="handleSubmit()">Submit Application</button>
+    </div>
+
+  </form>
+
+  <!-- ══ Thank You Screen ══ -->
+  <div id="thank-you">
+    <div class="ty-icon">
+      <svg fill="none" viewBox="0 0 32 32" stroke="#16a34a" stroke-width="2.5">
+        <circle cx="16" cy="16" r="13" stroke="#16a34a" stroke-width="2"/>
+        <path d="M9 16.5l5 5 9-9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h2>Application Submitted</h2>
+    <p>Thank you for submitting your loan application to Mesa Bridge Capital. Our team will review your information and be in touch shortly.</p>
+    <div class="ty-brand" style="margin-top:40px">
+      <span>Mesa Bridge Capital &nbsp;·&nbsp; Hard Money Lending</span>
+    </div>
+  </div>
+
+</div><!-- end page-wrapper -->
+
+<script>
+  // ─────────────────────────────────────────────────────
+  //  !! REPLACE THESE THREE VALUES WITH YOUR EMAILJS IDs !!
+  // ─────────────────────────────────────────────────────
+  const EMAILJS_PUBLIC_KEY   = 'YOUR_EMAILJS_PUBLIC_KEY';
+  const EMAILJS_SERVICE_ID   = 'YOUR_SERVICE_ID';
+  const EMAILJS_TEMPLATE_ID  = 'YOUR_TEMPLATE_ID';
+  const GRANT_EMAIL          = 'ggsouthwick@gmail.com';
+  // ─────────────────────────────────────────────────────
+
+  // Initialize EmailJS
+  if (EMAILJS_PUBLIC_KEY !== 'YOUR_EMAILJS_PUBLIC_KEY') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }
+
+  // ── Update progress bar as user scrolls ──
+  const sections = ['sec1','sec2','sec3','sec4','sec5','sec6','sec7'];
+  function updateProgress() {
+    const scrollY = window.scrollY + window.innerHeight * 0.5;
+    sections.forEach((id, i) => {
+      const el = document.getElementById(id);
+      const ps = document.getElementById('ps' + (i+1));
+      if (!el || !ps) return;
+      const rect = el.getBoundingClientRect();
+      const top  = rect.top + window.scrollY;
+      if (scrollY > top) {
+        ps.classList.add('complete');
+        ps.classList.remove('active');
+      } else if (i === 0 || scrollY > document.getElementById(sections[i-1]).getBoundingClientRect().top + window.scrollY) {
+        ps.classList.add('active');
+        ps.classList.remove('complete');
+      }
+    });
+  }
+  window.addEventListener('scroll', updateProgress, { passive: true });
+
+  // ── Show/hide entitlement detail ──
+  document.querySelector('input[name="use_entitlement"]').addEventListener('change', function() {
+    const block = document.getElementById('entitlement_block');
+    block.classList.toggle('visible', this.checked);
+  });
+
+  // ── Show/hide exit fields ──
+  function toggleExit() {
+    const val = document.querySelector('input[name="primary_exit"]:checked')?.value;
+    document.getElementById('exit_sale').classList.toggle('visible', val === 'Sale' || val === 'Both');
+    document.getElementById('exit_refi').classList.toggle('visible', val === 'Refinance' || val === 'Both');
+  }
+
+  // ── Collect form data ──
+  function collectData() {
+    const f = document.getElementById('loanForm');
+    const g = (name) => (f.querySelector(`[name="${name}"]`)?.value || '').trim();
+    const r = (name) => f.querySelector(`input[name="${name}"]:checked`)?.value || '';
+    const chk = (name) => { const el = f.querySelector(`input[name="${name}"]`); return el?.checked ? el.value : ''; };
+
+    const uses = ['use_refinance','use_construction','use_acquisition','use_entitlement']
+      .map(n => chk(n)).filter(Boolean);
+    const useOther = chk('use_other_chk') ? 'Other: ' + g('use_other_txt') : '';
+    if (useOther) uses.push(useOther);
+
+    const valMethods = ['val_appraisal','val_broker','val_comps','val_proforma']
+      .map(n => chk(n)).filter(Boolean).join(', ');
+
+    return {
+      // Section 1
+      entity_name:         g('entity_name'),
+      sponsor_names:       g('sponsor_names'),
+      email:               g('email'),
+      phone:               g('phone'),
+      sponsor_bio:         g('sponsor_bio'),
+      years_in_business:   g('years_in_business'),
+      similar_projects:    g('similar_projects'),
+      net_worth:           g('net_worth'),
+      liquidity:           g('liquidity'),
+      guarantee:           r('guarantee'),
+      // Section 2
+      acquisition_date:    g('acquisition_date'),
+      purchase_price:      g('purchase_price'),
+      total_capital:       g('total_capital_invested'),
+      sponsor_cash:        g('sponsor_cash'),
+      current_lender:      g('current_lender_payoff'),
+      why_financing:       g('why_financing'),
+      // Section 3
+      property_name:       g('property_name'),
+      property_type:       g('property_type'),
+      property_address:    g('property_address'),
+      current_status:      r('current_status'),
+      land_area:           g('land_area'),
+      building_sf:         g('building_sf'),
+      units_lots:          g('units_lots'),
+      // Section 4
+      net_proceeds:        g('net_proceeds'),
+      loan_term:           g('loan_term'),
+      use_of_funds:        uses.join(', '),
+      entitlement_detail:  g('entitlement_detail'),
+      loan_breakdown:      g('loan_breakdown'),
+      close_deadline:      g('close_deadline'),
+      // Section 5
+      current_zoning:      g('current_zoning'),
+      fully_entitled:      r('fully_entitled'),
+      approvals_remaining: g('approvals_remaining'),
+      permits_issued:      r('permits_issued'),
+      timeline_completion: g('timeline_completion'),
+      known_issues:        g('known_issues'),
+      // Section 6
+      projected_value:     g('projected_value'),
+      value_method:        valMethods,
+      target_rent:         g('target_rent'),
+      target_cap_rate:     g('target_cap_rate'),
+      stabilized_noi:      g('stabilized_noi'),
+      // Section 7
+      primary_exit:         r('primary_exit'),
+      expected_sales_price: g('expected_sales_price'),
+      buyer_engaged:        r('buyer_engaged'),
+      refi_value:           g('refi_stabilized_value'),
+      target_lender_type:   g('target_lender_type'),
+      takeout_commitment:   r('takeout_commitment'),
+      exit_timeline:        g('exit_timeline'),
+      // Meta
+      submitted_at: new Date().toISOString()
+    };
+  }
+
+  // ── Build human-readable email body ──
+  function buildEmailBody(d) {
+    return `
+NEW LOAN APPLICATION — MESA BRIDGE CAPITAL
+Submitted: ${new Date(d.submitted_at).toLocaleString()}
+
+════ SECTION 1: BORROWER INFORMATION ════
+Borrowing Entity: ${d.entity_name}
+Sponsor Name(s):  ${d.sponsor_names}
+Email:            ${d.email}
+Phone:            ${d.phone}
+Sponsor Bio:      ${d.sponsor_bio}
+Years in Business: ${d.years_in_business}
+Similar Projects:  ${d.similar_projects}
+Net Worth:         ${d.net_worth}
+Liquidity:         ${d.liquidity}
+Guarantee:         ${d.guarantee}
+
+════ SECTION 2: PROJECT BACKSTORY ════
+Acquisition Date:        ${d.acquisition_date}
+Purchase Price:          ${d.purchase_price}
+Total Capital Invested:  ${d.total_capital}
+Sponsor Cash:            ${d.sponsor_cash}
+Current Lender/Payoff:   ${d.current_lender}
+Why Seeking Financing:   ${d.why_financing}
+
+════ SECTION 3: PROPERTY INFORMATION ════
+Property Name:    ${d.property_name}
+Property Type:    ${d.property_type}
+Address:          ${d.property_address}
+Current Status:   ${d.current_status}
+Land Area:        ${d.land_area}
+Building SF:      ${d.building_sf}
+Units/Lots:       ${d.units_lots}
+
+════ SECTION 4: CAPITAL REQUEST ════
+Net Proceeds Requested: ${d.net_proceeds}
+Loan Term:              ${d.loan_term}
+Use of Funds:           ${d.use_of_funds}
+Entitlement Detail:     ${d.entitlement_detail}
+Loan Breakdown:         ${d.loan_breakdown}
+Close Deadline:         ${d.close_deadline}
+
+════ SECTION 5: ENTITLEMENT & CONSTRUCTION ════
+Current Zoning:       ${d.current_zoning}
+Fully Entitled:       ${d.fully_entitled}
+Approvals Remaining:  ${d.approvals_remaining}
+Building Permits:     ${d.permits_issued}
+Timeline:             ${d.timeline_completion}
+Known Issues:         ${d.known_issues}
+
+════ SECTION 6: PROJECT ECONOMICS ════
+Projected Value:   ${d.projected_value}
+Value Method:      ${d.value_method}
+Target Rent:       ${d.target_rent}
+Target Cap Rate:   ${d.target_cap_rate}
+Stabilized NOI:    ${d.stabilized_noi}
+
+════ SECTION 7: EXIT STRATEGY ════
+Primary Exit:          ${d.primary_exit}
+Expected Sales Price:  ${d.expected_sales_price}
+Buyer Engaged:         ${d.buyer_engaged}
+Refi Stabilized Value: ${d.refi_value}
+Target Lender Type:    ${d.target_lender_type}
+Takeout Commitment:    ${d.takeout_commitment}
+Exit Timeline:         ${d.exit_timeline}
+`.trim();
+  }
+
+  // ── Main submit handler ──
+  async function handleSubmit() {
+    // Basic validation
+    const required = document.querySelectorAll('[required]');
+    let valid = true;
+    required.forEach(el => {
+      if (!el.value.trim()) {
+        el.classList.add('error');
+        valid = false;
+      } else {
+        el.classList.remove('error');
+      }
+    });
+    if (!valid) {
+      document.querySelector('.error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    const data = collectData();
+
+    // Encode data for admin link
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+    const adminLink = window.location.origin + window.location.pathname.replace('index.html', '') + 'admin.html#' + encoded;
+    const emailBody = buildEmailBody(data);
+    const projectLabel = data.property_name || data.property_address || data.entity_name || 'New Application';
+
+    // Send email via EmailJS
+    if (EMAILJS_PUBLIC_KEY !== 'YOUR_EMAILJS_PUBLIC_KEY') {
+      try {
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          to_email:   GRANT_EMAIL,
+          from_name:  data.sponsor_names || data.entity_name,
+          reply_to:   data.email,
+          subject:    `New MBC Loan Application — ${projectLabel} — ${data.sponsor_names}`,
+          all_fields: emailBody,
+          admin_link: adminLink
+        });
+      } catch (err) {
+        console.warn('EmailJS send failed:', err);
+        // Continue anyway — show thank you
+      }
+    } else {
+      // EmailJS not configured — log admin link to console for testing
+      console.log('⚠️  EmailJS not configured. Admin link:\n', adminLink);
+    }
+
+    // Show thank you
+    document.getElementById('loanForm').style.display = 'none';
+    document.getElementById('progressWrap').style.display = 'none';
+    document.getElementById('thank-you').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
