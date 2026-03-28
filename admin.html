@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  MBC LOAN INTAKE  —  admin.html (Grant's Private Download Page) ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  HOW THIS WORKS:                                                 ║
+  ║  1. Borrower submits index.html                                  ║
+  ║  2. You receive an email with all their data + a link to here    ║
+  ║  3. Click the link → this page loads with their submission       ║
+  ║  4. Click "Download Excel" → gets your DD template pre-filled    ║
+  ║                                                                  ║
+  ║  REQUIREMENTS:                                                   ║
+  ║  • template.xlsx must be in the same folder as this file         ║
+  ║    (rename your "DD v1.1 (Project Name).xlsx" to template.xlsx)  ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MBC — Deal Review &amp; Download</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --navy:      #002855;
+      --blue:      #009CDE;
+      --orange:    #E87722;
+      --dk-orange: #CB6015;
+      --lt-blue:   #62B5E5;
+      --gray:      #D0D3D4;
+      --off-white: #F4F6F9;
+      --text:      #1a1a1a;
+      --muted:     #6b7280;
+      --border:    #dde2ea;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--off-white);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 36px 16px 64px;
+    }
+    .page-wrapper { max-width: 860px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--navy);
+      border-radius: 10px 10px 0 0;
+      overflow: hidden;
+    }
+    .header-top {
+      padding: 28px 40px 22px;
+      display: flex; align-items: center; gap: 18px;
+    }
+    .logo-mark { width: 50px; height: 50px; flex-shrink: 0; }
+    .logo-mark svg { width: 100%; height: 100%; }
+    .header-text h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
+    .header-text p  { font-size: 13px; font-weight: 300; color: var(--lt-blue); margin-top: 2px; }
+    .header-bar { height: 4px; background: linear-gradient(90deg, var(--orange) 0%, var(--blue) 100%); }
+
+    /* ── Action bar ── */
+    .action-bar {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+    }
+    .action-bar .meta { font-size: 13px; color: var(--muted); }
+    .action-bar .meta strong { color: var(--navy); font-weight: 600; }
+
+    .btn-download {
+      background: var(--navy); color: #fff;
+      font-family: 'Roboto', sans-serif;
+      font-size: 14px; font-weight: 700;
+      padding: 11px 28px; border: none; border-radius: 7px;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: background 0.2s;
+    }
+    .btn-download:hover    { background: #003f7a; }
+    .btn-download:disabled { background: var(--gray); cursor: not-allowed; }
+    .btn-download svg { width: 16px; height: 16px; }
+
+    .btn-secondary {
+      background: transparent; color: var(--navy);
+      font-family: 'Roboto', sans-serif;
+      font-size: 13px; font-weight: 500;
+      padding: 9px 18px; border: 1.5px solid var(--navy);
+      border-radius: 7px; cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover { background: var(--navy); color: #fff; }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border-top: 1px solid var(--border);
+      padding: 24px 40px;
+    }
+    .card:last-of-type { border-radius: 0 0 10px 10px; }
+    .section-title {
+      font-size: 12px; font-weight: 700; color: var(--navy);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 16px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--orange);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-num {
+      background: var(--navy); color: #fff;
+      font-size: 10px; font-weight: 700;
+      width: 20px; height: 20px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Field rows ── */
+    .field-grid {
+      display: grid; grid-template-columns: 200px 1fr;
+      gap: 0;
+    }
+    .field-row {
+      display: contents;
+    }
+    .field-row .lbl {
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      padding: 8px 12px 8px 0;
+      border-bottom: 1px solid var(--off-white);
+    }
+    .field-row .val {
+      font-size: 13px; font-weight: 400; color: var(--text);
+      padding: 8px 0 8px 12px;
+      border-bottom: 1px solid var(--off-white);
+    }
+    .field-row .val:empty::before { content: '—'; color: var(--gray); }
+    .field-row .val.highlight {
+      color: var(--navy); font-weight: 600;
+    }
+
+    /* ── Excel mapping badge ── */
+    .map-badge {
+      display: inline-block;
+      background: #e8f4e8; color: #166534;
+      font-size: 11px; font-weight: 600;
+      padding: 1px 6px; border-radius: 3px;
+      margin-left: 6px; font-family: monospace;
+      vertical-align: middle;
+    }
+
+    /* ── No data state ── */
+    .no-data {
+      background: #fff;
+      border-radius: 0 0 10px 10px;
+      padding: 60px 40px;
+      text-align: center;
+    }
+    .no-data h2 { font-size: 20px; font-weight: 600; color: var(--navy); }
+    .no-data p  { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 400px; margin-inline: auto; line-height: 1.6; }
+
+    /* ── Toast ── */
+    #toast {
+      display: none;
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: #166534; color: #fff;
+      padding: 12px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 9999;
+    }
+
+    @media(max-width:640px) {
+      .card, .action-bar, .header-top { padding-left: 20px; padding-right: 20px; }
+      .field-grid { grid-template-columns: 140px 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo-mark">
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="56" height="56" rx="3" fill="none" stroke="#D0D3D4" stroke-width="2"/>
+          <path d="M14 30 A16 16 0 0 1 46 30 A16 16 0 0 1 30 46 L30 38 A8 8 0 0 0 38 30 A8 8 0 0 0 14 30Z" fill="#E87722"/>
+          <path d="M30 14 A16 16 0 0 1 46 30 L38 30 A8 8 0 0 0 30 22 A8 8 0 0 0 22 30 L14 30 A16 16 0 0 1 30 14Z" fill="#009CDE" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1>MESA BRIDGE CAPITAL — Deal Review</h1>
+        <p>Private &nbsp;·&nbsp; Do not share this link</p>
+      </div>
+    </div>
+    <div class="header-bar"></div>
+  </div>
+
+  <!-- Dynamic content injected by JS -->
+  <div id="content"></div>
+
+</div>
+
+<div id="toast">✓ Excel file downloaded</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  CELL MAPPING: form field → Deal Details cell
+//  Only writes to blank input cells (preserves all formulas)
+// ─────────────────────────────────────────────────────────────
+const CELL_MAP = {
+  'C3':  d => d.property_name || d.property_address?.split(',')[0]?.trim() || '',
+  'C4':  d => parseState(d.property_address),
+  'C5':  d => parseCity(d.property_address),
+  'C6':  d => d.property_address || '',
+  'C9':  d => parseNumber(d.land_area),
+  'C10': d => parseNumber(d.units_lots),
+  'C11': d => d.property_type || '',
+  'C12': d => d.current_status || '',
+  'C13': d => d.use_of_funds || '',
+  'C14': d => d.entity_name || '',
+  'C15': d => d.sponsor_names || '',
+  'C16': d => d.entity_name || '',
+  'C17': d => '',
+  'C18': d => parseNumber(d.liquidity),
+  'C27': d => parseMonths(d.loan_term),
+  'C28': d => parseNumber(d.net_proceeds),
+  'C33': d => parseNumber(d.projected_value),
+  'C34': d => parseNumber(d.projected_value),
+  'C36': d => {
+    const val   = parseNumber(d.projected_value);
+    const units = parseNumber(d.units_lots);
+    return (val && units && units > 0) ? val / units : (val || '');
+  }
+};
+
+// ── Helpers ──
+function parseNumber(str) {
+  if (!str) return '';
+  const n = parseFloat(String(str).replace(/[$,\s]/g, '').replace(/[^0-9.-]/g, ''));
+  return isNaN(n) ? '' : n;
+}
+function parseMonths(str) {
+  if (!str) return 12;
+  const m = String(str).match(/(\d+)/);
+  return m ? parseInt(m[1]) : 12;
+}
+function parseState(addr) {
+  if (!addr) return '';
+  // Match "City, ST XXXXX" or "City, State"
+  const m = addr.match(/,\s*([A-Z]{2})\s*\d{5}/);
+  if (m) return m[1];
+  const parts = addr.split(',');
+  if (parts.length >= 3) return parts[parts.length - 2].trim().split(' ').pop();
+  return '';
+}
+function parseCity(addr) {
+  if (!addr) return '';
+  const parts = addr.split(',');
+  // "123 Main St, Phoenix, AZ 85001" → parts[1] = "Phoenix"
+  return parts.length >= 2 ? parts[parts.length - (parts.length >= 3 ? 2 : 1)].trim() : '';
+}
+
+// ── Decode submission from URL hash ──
+function loadData() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return null;
+  try {
+    return JSON.parse(decodeURIComponent(escape(atob(hash))));
+  } catch(e) {
+    console.error('Failed to decode submission data:', e);
+    return null;
+  }
+}
+
+// ── Format currency ──
+function fmt(val, prefix='$') {
+  if (!val) return '';
+  const n = parseFloat(String(val).replace(/[$,]/g,''));
+  if (isNaN(n)) return val;
+  return prefix + n.toLocaleString('en-US');
+}
+
+// ── Render submission summary ──
+function renderData(d) {
+  const submittedAt = d.submitted_at
+    ? new Date(d.submitted_at).toLocaleString('en-US', { dateStyle:'full', timeStyle:'short' })
+    : 'Unknown';
+  const projectLabel = d.property_name || d.property_address || d.entity_name || 'Untitled';
+
+  function row(label, value, highlight=false, mapCell='') {
+    const badge = mapCell ? `<span class="map-badge" title="Mapped to Deal Details ${mapCell}">→ ${mapCell}</span>` : '';
+    return `
+      <div class="field-row">
+        <div class="lbl">${label}${badge}</div>
+        <div class="val${highlight?' highlight':''}">${value || ''}</div>
+      </div>`;
+  }
+
+  const html = `
+    <!-- Action bar -->
+    <div class="action-bar">
+      <div class="meta">
+        <strong>${projectLabel}</strong><br/>
+        ${d.entity_name || ''} ${d.sponsor_names ? '· ' + d.sponsor_names : ''}<br/>
+        Submitted: ${submittedAt}
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-secondary" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn-download" id="dlBtn" onclick="downloadExcel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12M8 12l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Download Deal Details Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 1 -->
+    <div class="card">
+      <div class="section-title"><span class="section-num">1</span>Borrower Information</div>
+      <div class="field-grid">
+        ${row('Borrowing Entity', d.entity_name, true, 'C14 & C16')}
+        ${row('Sponsor Name(s)', d.sponsor_names, false, 'C15')}
+        ${row('Email', d.email)}
+        ${row('Phone', d.phone)}
+        ${row('Sponsor Bio', d.sponsor_bio)}
+        ${row('Years in Business', d.years_in_business)}
+        ${row('Similar Projects', d.similar_projects)}
+        ${row('Net Worth', fmt(d.net_worth))}
+        ${row('Liquidity Available', fmt(d.liquidity), false, 'C18')}
+        ${row('Guarantee', d.guarantee)}
+      </div>
+    </div>
+
+    <!-- Section 2 -->
+    <div class="card">
+      <div class="section-title"><span class="section-num">2</span>Project Backstory</div>
+      <div class="field-grid">
+        ${row('Acquisition Date', d.acquisition_date)}
+        ${row('Purchase Price', fmt(d.purchase_price))}
+        ${row('Total Capital Invested', fmt(d.total_capital))}
+        ${row('Sponsor Cash', fmt(d.sponsor_cash))}
+        ${row('Current Lender / Payoff', d.current_lender)}
+        ${row('Why Seeking Financing', d.why_financing)}
+      </div>
+    </div>
+
+    <!-- Section 3 -->
+    <div class="card">
+      <div class="section-title"><span class="section-num">3</span>Property Information</div>
+      <div class="field-grid">
+        ${row('Property Name', d.property_name, false, 'C3')}
+        ${row('Property Type', d.property_type, false, 'C11')}
+        ${row('Address', d.property_address, false, 'C6')}
+        ${row('City / State', `${parseCity(d.property_address) || '—'} / ${parseState(d.property_address) || '—'}`, false, 'C5 & C4')}
+        ${row('Current Status', d.current_status, false, 'C12')}
+        ${row('Land Area (Acres)', d.land_area, false, 'C9')}
+        ${row('Building SF', d.building_sf)}
+        ${row('Units / Lots', d.units_lots, false, 'C10')}
+      </div>
+    </div>
+
+    <!-- Section 4 -->
+    <div class="card">
+      <div class="section-title"><span class="section-num">4</span>Capital Request</div>
+      <div class="field-grid">
+        ${row('Net Proceeds Requested', fmt(d.net_proceeds), true, 'C28')}
+        ${row('Loan Term', d.loan_term, false, 'C27')}
+        ${row('Use of Funds', d.use_of_funds, false, 'C13')}
+        ${row('Entitlement Detail', d.entitlement_detail)}
+        ${row('Loan Dollar Breakdown', d.loan_breakdown)}
+        ${row('Close Deadline', d.close_deadline)}
+      </div>
+    </div>
+
+    <!-- Section 5 -->
+    <div class="card">
+      <div class="section-title"><span class="section-num">5</span>Entitlement &amp; Construction</div>
+      <div class="field-grid">
+        ${row('Current Zoning', d.current_zoning)}
+        ${row('Fully Entitled', d.fully_entitled)}
+        ${row('Approvals Remaining', d.approvals_remaining)}
+        ${row('Building Permits Issued', d.permits_issued)}
+        ${row('Timeline to Completion', d.timeline_completion)}
+        ${row('Known Issues', d.known_issues)}
+      </div>
+    </div>
+
+    <!-- Section 6 -->
+    <div class="card">
+      <div class="section-title"><span class="section-num">6</span>Project Economics</div>
+      <div class="field-grid">
+        ${row("Borrower's Projected Value", fmt(d.projected_value), true, 'C33 & C34')}
+        ${row('Value Method', d.value_method)}
+        ${row('Target Rent', d.target_rent)}
+        ${row('Target Cap Rate', d.target_cap_rate)}
+        ${row('Expected Stabilized NOI', d.stabilized_noi)}
+      </div>
+    </div>
+
+    <!-- Section 7 -->
+    <div class="card">
+      <div class="section-title"><span class="section-num">7</span>Exit Strategy</div>
+      <div class="field-grid">
+        ${row('Primary Exit', d.primary_exit, true)}
+        ${row('Expected Sales Price', fmt(d.expected_sales_price))}
+        ${row('Buyer Engaged', d.buyer_engaged)}
+        ${row('Refi Stabilized Value', fmt(d.refi_value))}
+        ${row('Target Lender Type', d.target_lender_type)}
+        ${row('Takeout Commitment', d.takeout_commitment)}
+        ${row('Timeline to Exit', d.exit_timeline)}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('content').innerHTML = html;
+}
+
+// ── Download pre-filled Excel ──
+async function downloadExcel() {
+  const btn = document.getElementById('dlBtn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M12 4v12M8 12l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg> Preparing…`;
+
+  const d = loadData();
+  if (!d) { btn.disabled = false; btn.innerHTML = 'Download Excel'; return; }
+
+  try {
+    // Fetch the Excel template
+    const response = await fetch('./template.xlsx');
+    if (!response.ok) throw new Error(`Could not load template.xlsx (${response.status}). Make sure template.xlsx is in the same folder.`);
+
+    const arrayBuffer = await response.arrayBuffer();
+    const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: 'array', cellFormula: true, cellStyles: true });
+
+    // Get Deal Details sheet
+    const wsName = 'Deal Details';
+    if (!wb.Sheets[wsName]) throw new Error('Sheet "Deal Details" not found in template.');
+    const ws = wb.Sheets[wsName];
+
+    // Write values from the form into the mapped cells
+    for (const [cell, valueFn] of Object.entries(CELL_MAP)) {
+      const value = valueFn(d);
+      if (value === '' || value === null || value === undefined) continue;
+      // Write cell — preserve existing cell object if present, just update value
+      if (!ws[cell]) ws[cell] = {};
+      if (typeof value === 'number') {
+        ws[cell].t = 'n';
+        ws[cell].v = value;
+        ws[cell].w = value.toLocaleString();
+      } else {
+        ws[cell].t = 's';
+        ws[cell].v = String(value);
+        ws[cell].w = String(value);
+      }
+      // Remove formula if present (we're hardcoding the value)
+      delete ws[cell].f;
+    }
+
+    // Build filename
+    const projectSlug = (d.property_name || d.entity_name || 'Deal')
+      .replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '_');
+    const dateStr = new Date().toISOString().slice(0,10);
+    const filename = `MBC_DD_${projectSlug}_${dateStr}.xlsx`;
+
+    // Write and trigger download
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+
+    // Show toast
+    const toast = document.getElementById('toast');
+    toast.textContent = `✓ Downloaded: ${filename}`;
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, 4000);
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12M8 12l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg> Download Deal Details Excel`;
+
+  } catch (err) {
+    console.error(err);
+    alert('Error generating Excel:\n\n' + err.message + '\n\nMake sure "template.xlsx" is in the same GitHub folder as this admin.html file.');
+    btn.disabled = false;
+    btn.innerHTML = 'Retry Download';
+  }
+}
+
+// ── No-data state ──
+function renderNoData() {
+  document.getElementById('content').innerHTML = `
+    <div class="no-data">
+      <h2>No Submission Loaded</h2>
+      <p>This page loads automatically when you click the link in your email notification. If you received a link and it's not working, contact your developer.</p>
+      <p style="margin-top:16px;font-size:13px;color:#9ca3af">If you are testing, open the browser console to see the admin link after a test submission on index.html.</p>
+    </div>
+  `;
+}
+
+// ── Init ──
+const data = loadData();
+if (data) {
+  renderData(data);
+} else {
+  renderNoData();
+}
+</script>
+</body>
+</html>
