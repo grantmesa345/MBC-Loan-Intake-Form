@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<!-- MBC Deal Review — admin.html (Grant's private download page) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MBC — Deal Review</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --black:     #000000;
+      --blue:      #009CDE;
+      --orange:    #E87722;
+      --dk-orange: #CB6015;
+      --lt-blue:   #62B5E5;
+      --gray:      #D0D3D4;
+      --off-white: #F4F6F9;
+      --text:      #1a1a1a;
+      --muted:     #6b7280;
+      --border:    #dde2ea;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: var(--off-white);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 36px 16px 64px;
+    }
+    .page-wrapper { max-width: 840px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .header { background: var(--black); border-radius: 10px 10px 0 0; overflow: hidden; }
+    .header-top { padding: 28px 40px 22px; display: flex; align-items: center; gap: 20px; }
+    .logo-wrap { width: 64px; height: 64px; flex-shrink: 0; }
+    .logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .header-text h1 { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
+    .header-text p  { font-size: 13px; font-weight: 300; color: var(--lt-blue); margin-top: 2px; }
+    .header-bar { height: 4px; background: linear-gradient(90deg, var(--orange) 0%, var(--blue) 100%); }
+
+    /* ── Action bar ── */
+    .action-bar {
+      background: #fff; border-bottom: 1px solid var(--border);
+      padding: 18px 40px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+    }
+    .action-bar .meta { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .action-bar .meta strong { color: var(--black); font-weight: 600; font-size: 15px; }
+
+    .btn-download {
+      background: var(--orange); color: #fff;
+      font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 700;
+      padding: 11px 28px; border: none; border-radius: 7px;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: background 0.2s; white-space: nowrap;
+    }
+    .btn-download:hover    { background: var(--dk-orange); }
+    .btn-download:disabled { background: var(--gray); cursor: not-allowed; }
+    .btn-download svg { width: 16px; height: 16px; }
+
+    .btn-print {
+      background: transparent; color: var(--black);
+      font-family: 'Roboto', sans-serif; font-size: 13px; font-weight: 500;
+      padding: 9px 18px; border: 1.5px solid var(--black); border-radius: 7px;
+      cursor: pointer; transition: background 0.2s, color 0.2s;
+    }
+    .btn-print:hover { background: var(--black); color: #fff; }
+
+    /* ── Cards ── */
+    .card { background: #fff; border-top: 1px solid var(--border); padding: 24px 40px; }
+    .card:last-of-type { border-radius: 0 0 10px 10px; }
+
+    .section-title {
+      font-size: 13px; font-weight: 700; color: var(--black);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 16px; padding-bottom: 8px;
+      border-bottom: 2px solid var(--orange);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-num {
+      background: var(--black); color: #fff;
+      font-size: 10px; font-weight: 700;
+      width: 20px; height: 20px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Field grid ── */
+    .field-grid { display: grid; grid-template-columns: 220px 1fr; }
+    .field-row  { display: contents; }
+    .field-row .lbl {
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      padding: 9px 12px 9px 0; border-bottom: 1px solid var(--off-white);
+    }
+    .field-row .val {
+      font-size: 13px; color: var(--text);
+      padding: 9px 0 9px 12px; border-bottom: 1px solid var(--off-white);
+    }
+    .field-row .val:empty::before { content: '—'; color: var(--gray); }
+    .field-row .val.strong { color: var(--black); font-weight: 600; }
+
+    /* ── Excel cell badge ── */
+    .cell-tag {
+      display: inline-block; background: #e8f4e8; color: #166534;
+      font-size: 11px; font-weight: 600; font-family: monospace;
+      padding: 1px 5px; border-radius: 3px; margin-left: 5px; vertical-align: middle;
+    }
+
+    /* ── Sub-divider ── */
+    .sub-divider { border: none; border-top: 1px dashed var(--border); margin: 14px 0 10px; }
+
+    /* ── No data ── */
+    .no-data { background: #fff; border-radius: 0 0 10px 10px; padding: 60px 40px; text-align: center; }
+    .no-data h2 { font-size: 20px; font-weight: 600; color: var(--black); }
+    .no-data p  { font-size: 14px; color: var(--muted); margin-top: 10px; max-width: 400px; margin-inline: auto; line-height: 1.6; }
+
+    /* ── Toast ── */
+    #toast {
+      display: none; position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+      background: #166534; color: #fff; padding: 12px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; box-shadow: 0 4px 20px rgba(0,0,0,.15); z-index: 9999;
+    }
+
+    @media(max-width:640px) {
+      .card, .action-bar, .header-top { padding-left: 20px; padding-right: 20px; }
+      .field-grid { grid-template-columns: 150px 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+  <div class="header">
+    <div class="header-top">
+      <div class="logo-wrap"><img src="data:image/png;base64,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" alt="Mesa Bridge Capital" /></div>
+      <div class="header-text">
+        <h1>MESA BRIDGE CAPITAL — Deal Review</h1>
+        <p>Private &nbsp;·&nbsp; Do not share this link</p>
+      </div>
+    </div>
+    <div class="header-bar"></div>
+  </div>
+
+  <div id="content"></div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+// ── Cell mapping: form field → Deal Details column C ──
+// C14 ("Borrower") and C33 ("Value") are header rows — left blank intentionally
+const CELL_MAP = {
+  'C3':  d => d.property_name || d.property_address?.split(',')[0]?.trim() || '',
+  'C4':  d => parseState(d.property_address),
+  'C5':  d => parseCity(d.property_address),
+  'C6':  d => d.property_address || '',
+  'C9':  d => parseNumber(d.land_area),
+  'C10': d => parseNumber(d.units_lots),
+  'C11': d => d.property_type || '',
+  'C12': d => d.current_status || '',
+  'C13': d => d.use_of_funds || '',
+  'C15': d => d.sponsor_names || '',
+  'C16': d => d.entity_name || '',
+  'C18': d => parseNumber(d.liquidity),
+  'C27': d => parseMonths(d.loan_term),
+  'C28': d => parseNumber(d.net_proceeds),
+  'C34': d => parseNumber(d.projected_value),
+  'C36': d => {
+    const val = parseNumber(d.projected_value), units = parseNumber(d.units_lots);
+    return (val && units > 0) ? val / units : (val || '');
+  }
+};
+
+function parseNumber(str) {
+  if (!str) return '';
+  const n = parseFloat(String(str).replace(/[$,\s]/g,'').replace(/[^0-9.-]/g,''));
+  return isNaN(n) ? '' : n;
+}
+function parseMonths(str) {
+  if (!str) return 12;
+  const m = String(str).match(/(\d+)/);
+  return m ? parseInt(m[1]) : 12;
+}
+function parseState(addr) {
+  if (!addr) return '';
+  const m = addr.match(/,\s*([A-Z]{2})\s*\d{5}/);
+  if (m) return m[1];
+  const p = addr.split(',');
+  return p.length >= 3 ? p[p.length-2].trim().split(' ').pop() : '';
+}
+function parseCity(addr) {
+  if (!addr) return '';
+  const p = addr.split(',');
+  return p.length >= 2 ? p[p.length - (p.length >= 3 ? 2 : 1)].trim() : '';
+}
+function loadData() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return null;
+  try { return JSON.parse(decodeURIComponent(escape(atob(hash)))); }
+  catch(e) { return null; }
+}
+function fmt(val) {
+  if (!val) return '';
+  const n = parseFloat(String(val).replace(/[$,]/g,''));
+  return isNaN(n) ? val : '$' + n.toLocaleString('en-US');
+}
+
+function row(label, value, isStrong=false, cell='') {
+  const badge = cell ? `<span class="cell-tag">→ ${cell}</span>` : '';
+  return `<div class="field-row">
+    <div class="lbl">${label}${badge}</div>
+    <div class="val${isStrong?' strong':''}">${value || ''}</div>
+  </div>`;
+}
+
+function renderData(d) {
+  const submitted = d.submitted_at
+    ? new Date(d.submitted_at).toLocaleString('en-US', {dateStyle:'full', timeStyle:'short'})
+    : '';
+  const projectLabel = d.property_name || d.property_address || d.entity_name || 'Untitled';
+  const addlCash = d.additional_cash === 'Yes'
+    ? `Yes${d.additional_cash_amount ? ' — ' + fmt(d.additional_cash_amount) : ''}`
+    : (d.additional_cash || '');
+
+  document.getElementById('content').innerHTML = `
+    <div class="action-bar">
+      <div class="meta">
+        <strong>${projectLabel}</strong><br/>
+        ${d.sponsor_names || ''}${d.entity_name ? ' &nbsp;·&nbsp; ' + d.entity_name : ''}<br/>
+        <span style="font-size:12px">Submitted: ${submitted}</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <button class="btn-print" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn-download" id="dlBtn" onclick="downloadExcel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12M8 12l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Download Deal Details Excel
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">1</span>Borrower Information</div>
+      <div class="field-grid">
+        ${row('Sponsor Name(s)', d.sponsor_names, true, 'C15')}
+        ${row('Borrowing Entity', d.entity_name, false, 'C16')}
+        ${row('Email', d.email)}
+        ${row('Phone', d.phone)}
+        ${row('Sponsor Bio', d.sponsor_bio)}
+        ${row('Net Worth', fmt(d.net_worth))}
+        ${row('Liquidity Available', fmt(d.liquidity), false, 'C18')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">2</span>Property Information</div>
+      <div class="field-grid">
+        ${row('Property Name', d.property_name, false, 'C3')}
+        ${row('Property Type', d.property_type, false, 'C11')}
+        ${row('Address', d.property_address, false, 'C6')}
+        ${row('City', parseCity(d.property_address), false, 'C5')}
+        ${row('State', parseState(d.property_address), false, 'C4')}
+        ${row('Current Status', d.current_status, false, 'C12')}
+        ${row('Land Area', d.land_area, false, 'C9')}
+        ${row('Building SF', d.building_sf)}
+        ${row('Units / Lots', d.units_lots, false, 'C10')}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">3</span>Project Background</div>
+      <div class="field-grid">
+        ${row('Acquisition Date', d.acquisition_date)}
+        ${row('Purchase Price', fmt(d.purchase_price))}
+        ${row('Sponsor Cash Investment', fmt(d.sponsor_cash))}
+        ${row('Current Lender / Payoff', d.current_lender_payoff)}
+        ${row('Why Seeking Financing', d.why_financing)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">4</span>Capital Request</div>
+      <div class="field-grid">
+        ${row('Net Proceeds Requested', fmt(d.net_proceeds), true, 'C28')}
+        ${row('Loan Term', d.loan_term, false, 'C27')}
+        ${row('Use of Funds', d.use_of_funds, false, 'C13')}
+        ${row('Entitlement Detail', d.entitlement_detail)}
+        ${row('Loan Dollar Breakdown', d.loan_breakdown)}
+        ${row('Additional Cash at Close', addlCash)}
+        ${row('Close Deadline', d.close_deadline)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">5</span>Entitlement &amp; Construction Status</div>
+      <div class="field-grid">
+        ${row('Current Zoning', d.current_zoning)}
+        ${row('Fully Entitled', d.fully_entitled)}
+        ${row('Approvals Remaining', d.approvals_remaining)}
+        ${row('Building Permits Issued', d.permits_issued)}
+        ${row('Timeline to Completion', d.timeline_completion)}
+        ${row('Known Issues', d.known_issues)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">6</span>Project Economics</div>
+      <div class="field-grid">
+        ${row("Projected Value", fmt(d.projected_value), true, 'C34')}
+        ${row('Value Method', d.value_method)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="section-num">7</span>Exit Strategy</div>
+      <div class="field-grid">
+        ${row('Primary Exit', d.primary_exit, true)}
+        ${d.primary_exit === 'Sale' || d.primary_exit === 'Both' ? `
+          ${row('Expected Sales Price', fmt(d.expected_sales_price))}
+          ${row('Buyer Engaged', d.buyer_engaged)}` : ''}
+        ${d.primary_exit === 'Refinance' || d.primary_exit === 'Both' ? `
+          ${row('Refi Stabilized Value', fmt(d.refi_stabilized_value))}
+          ${row('Target Lender Type', d.target_lender_type)}
+          ${row('Takeout Commitment', d.takeout_commitment)}` : ''}
+        ${row('Timeline to Exit', d.exit_timeline)}
+      </div>
+    </div>
+  `;
+}
+
+async function downloadExcel() {
+  const btn = document.getElementById('dlBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M12 4v12M8 12l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg> Preparing…`;
+
+  const d = loadData();
+  if (!d) { btn.disabled = false; return; }
+
+  try {
+    const res = await fetch('./template.xlsx');
+    if (!res.ok) throw new Error(`Could not load template.xlsx (${res.status}). Make sure template.xlsx is in the same GitHub folder.`);
+
+    const wb = XLSX.read(new Uint8Array(await res.arrayBuffer()), { type:'array', cellFormula:true, cellStyles:true });
+    const ws = wb.Sheets['Deal Details'];
+    if (!ws) throw new Error('Sheet "Deal Details" not found.');
+
+    for (const [cell, fn] of Object.entries(CELL_MAP)) {
+      const value = fn(d);
+      if (value === '' || value == null) continue;
+      if (!ws[cell]) ws[cell] = {};
+      if (typeof value === 'number') {
+        ws[cell].t = 'n'; ws[cell].v = value; ws[cell].w = value.toLocaleString();
+      } else {
+        ws[cell].t = 's'; ws[cell].v = String(value); ws[cell].w = String(value);
+      }
+      delete ws[cell].f;
+    }
+
+    const slug = (d.property_name || d.entity_name || 'Deal')
+      .replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'_');
+    const filename = `MBC_DD_${slug}_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+    const blob = new Blob([XLSX.write(wb, {bookType:'xlsx', type:'array'})],
+      {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a = Object.assign(document.createElement('a'), {href: URL.createObjectURL(blob), download: filename});
+    a.click(); URL.revokeObjectURL(a.href);
+
+    const toast = document.getElementById('toast');
+    toast.textContent = `✓ Downloaded: ${filename}`;
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 4000);
+
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12M8 12l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg> Download Deal Details Excel`;
+
+  } catch(err) {
+    alert('Error: ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = 'Retry Download';
+  }
+}
+
+function renderNoData() {
+  document.getElementById('content').innerHTML = `
+    <div class="no-data">
+      <h2>No Submission Loaded</h2>
+      <p>This page loads automatically when you click the link in your email notification from a borrower submission.</p>
+    </div>`;
+}
+
+const data = loadData();
+data ? renderData(data) : renderNoData();
+</script>
+</body>
+</html>
